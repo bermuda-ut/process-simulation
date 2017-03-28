@@ -1,9 +1,4 @@
-#include <math.h>
 #include "memory.h"
-
-#define FREE_CHAR '-'
-#define TAKEN_CHAR '+'
-#define MEM_PRINT_LEN 40
 
 void free_memory(Memory *m) {
     free(m);
@@ -25,12 +20,14 @@ Memory *new_memory(char* strategy, int size) {
     Memory *mem = malloc(sizeof(Memory));
     Chunk *init = new_chunk(size);
 
-    mem->list = push(NULL, init);
+    mem->chunks = push(NULL, init);
     mem->arrivals = NULL;
+    mem->processes = NULL;
     mem->size = size;
     return mem;
 }
 
+/*
 int in_memory(Memory *m, int pid) {
     List node = m->list;
 
@@ -44,11 +41,92 @@ int in_memory(Memory *m, int pid) {
 
     return 0;
 }
+*/
 
 Process *oldest_process(Memory *m) {
     return (m->arrivals->data);
 }
 
+void merge_empty_slots(Memory *m) {
+    List curr = m->chunks;
+    List next = curr->next;
+
+    while(curr && next) {
+        Chunk *c = (Chunk*)curr->data;
+        Chunk *n = (Chunk*)next->data;
+        //fprintf(stderr, "curr %p, next %p\n", curr, next);
+        //fprintf(stderr, "c %p, n %p\n", c, n);
+        //fprintf(stderr, "ct %d, nt %d\n", c->taken, n->taken);
+
+        if(c && n && c->taken == 0 && n->taken == 0) {
+            int total = c->size + n->size;
+            Chunk *toadd = new_chunk(total);
+
+            // remove curr's chunk then point into new one
+            free_chunk(c);
+            curr->data = toadd;
+
+            // completely remove next
+            free_chunk(n);
+            curr->next = next->next;
+            free(next);
+
+            next = curr->next;
+        } else {
+            if(next && next->next) {
+                curr = next;
+                next = next->next;
+            } else {
+                break;
+            }
+        }
+    }
+}
+
+int load_to_memory(Memory *m, Process *p) {
+    List node = m->chunks;
+
+    while(node) {
+        Chunk *chunk = node->data;
+        int remain = chunk->size - p->memsize;
+        // can insert
+        if(chunk->taken == 0 && remain >= 0) {
+            chunk->taken = p->pid;
+            chunk->size = p->memsize;
+
+            // create new chunk
+            if(remain > 0) {
+                Chunk *temp = new_chunk(remain);
+                List second = push(NULL, temp);
+                List third = node->next;
+                second->next = third;
+                node->next = second;
+            }
+
+            merge_empty_slots(m);
+
+            // add to arrival list
+            if(m->arrivals)
+                insert(p, &(m->arrivals));
+            else
+                m->arrivals = push(NULL, p);
+
+            // add to process queue
+            if(m->processes)
+                insert(p, &(m->processes));
+            else
+                m->processes = push(NULL, p);
+
+            return 1;
+        }
+
+        node = node->next;
+    }
+    return 0;
+}
+
+
+/*
 int load_memory(Memory *m, Process *p) {
     List node = m->list;
 
@@ -116,9 +194,10 @@ void unload_memory(Memory *m, int pid) {
         node = node->next;
     }
 }
+*/
 
 void print_memory(Memory *m, FILE *f) {
-    List node = m->list;
+    List node = m->chunks;
     int sum_taken = 0;
 
     while(node) {
@@ -144,8 +223,52 @@ void print_memory(Memory *m, FILE *f) {
     fprintf(f, "[ ");
     while(arr) {
         Process *p = (Process*)arr->data;
-        fprintf(f, "%d, ", p->pid);
+        fprintf(f, "%d:%d, ", p->pid, p->elapsed);
         arr = arr->next;
     }
     fprintf(f, " ]\n");
 }
+
+int process_memory_head(Memory *m, int quantum) {
+    // res = -1 = did not finish processing, need to requeue process
+    List plist = m->processes;
+
+    if(!plist)
+        return NOTHING_TO_PROCESS;
+
+    Process *p = (Process*)plist->data;
+    p->elapsed += quantum;
+
+    int diff;
+    if((diff = p->elapsed - p->burst) >= 0)
+        return diff;
+
+    return PROCESSED;
+}
+
+void requeue_memory_head(Memory *m) {
+    // res = -1 = there is nothing to process in memory!
+    head_to_tail(&(m->processes));
+} 
+
+void free_memory_head(Memory *m) {
+    // res = 0,1,2... = finished processing, need to delete process
+    // remove from processes;
+    Process *p = pop(&(m->processes));
+
+    // remove from arrivals
+    del(process_eq, p, &(m->arrivals));
+
+    // remove from memory
+    List node = m->chunks;
+    while(node) {
+        Chunk *c = node->data;
+        if(c->taken == p->pid) {
+            c->taken = 0;
+            break;
+        }
+    }
+
+    merge_empty_slots(m);
+}
+

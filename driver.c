@@ -4,23 +4,25 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "process.h"
-#include "memory.h"
-#include "storage.h"
 #include "list.h"
-#include "advlist.h"
+#include "process.h"
+#include "storage.h"
+#include "memory.h"
 
 #define INPUT_SIZE 4
 #define READ_SIZE 4
 
-void simulate_process(List plist, Memory *memory, Storage *s, int quantum);
-void print_plist_node(FILE *f, void* data);
-void print_inputs(FILE *f, char **inputs);
-FILE *open_file(char* file, char* format);
 List generate_process_list(FILE *fp);
-void load_from_disk(Memory *memory, List *plist, List *currPlist, int progress);
-int process_recent(int elapse, List *plist, Memory *memory);
-bool process_eq(void *aim, void *node);
+void simulate_process(List plist, Memory *memory, Storage *s, int quantum);
+
+void print_inputs(FILE *f, char **inputs);
+void print_plist_node(FILE *f, void* data);
+FILE *open_file(char* file, char* format);
+
+// deprecated
+//void load_from_disk(Memory *memory, List *plist, List *currPlist, int progress);
+//int process_recent(int elapse, List *plist, Memory *memory);
+//bool process_eq(void *aim, void *node);
 
 int main(int argc, char **argv) {
     // pointer declare
@@ -56,9 +58,11 @@ int main(int argc, char **argv) {
     // start processing!
     simulate_process(plist, m, s, atoi(inputs[3]));
 
+    /*
     free(inputs);
     free_list(plist);
     free_memory(m);
+    */
 
     exit(EXIT_SUCCESS);
 }
@@ -67,36 +71,53 @@ int main(int argc, char **argv) {
 void simulate_process(List plist, Memory *m, Storage *s, int quantum) {
     int progress = 0;
     bool requeue = 0;
+
     // while there are stuff in arrivals or plist
-
-    // assume start with process
     while(s->processes || plist || m->arrivals) {
-        // process the head process of the memory
-        int res = process_memory_head(m);
+        fprintf(stderr, "\n\n\t\t\tPROGRESSS %d \n", progress);
 
-        if(res == -1) {
-            // res = -1 = did not finish processing, need to requeue process
+        // from prev interation, requeue if needed
+        if(requeue) {
             requeue_memory_head(m);
-            progress += quantum;
-        } else if(res == -2) {
-            // res = -1 = there is nothing to process in memory!
-            // requeue_memory_head(m);
-            progress += 1;
-        } else {
-            // res = 0,1,2... = finished processing, need to delete process
-            free_memory_head(m);
-            progress += quantum - quantum;
+            requeue = 0;
+            fprintf(stderr, "requeued\n");
         }
 
         // load plist to storage IF head plist arrival >= progress
-        load_to_storage(plist, s, progress);
+        load_to_storage(&plist, s, progress);
+        fprintf(stderr, "plist > storage\n");
 
         // from storage, load oldest process to m
         storage_to_memory(s, m);
+        fprintf(stderr, "storage > memory\n");
 
+        // print status
+        print_list(print_plist_node, stderr, plist);
+        print_storage(s, stderr);
+        print_memory(m, stderr);
+
+        // add elapsed the head process of the memory
+        int res = process_memory_head(m, quantum);
+
+        if(res == -1) {
+            // res = -1 = did not finish processing, need to requeue process
+            fprintf(stderr, "back to queue\n");
+            requeue = 1;
+            progress += quantum;
+        } else if(res == -2) {
+            fprintf(stderr, "nothing to process\n");
+            // res = -2 = nothing to process, kill time
+            progress += 1;
+        } else {
+            fprintf(stderr, "finished processing one\n");
+            // res = 0,1,2... = finished processing, need to delete process
+            free_memory_head(m);
+            progress += quantum - res;
+        }
     }
 }
 
+/*
 void load_from_disk(Memory *memory, List *plist, List *currPlist, int progress) {
     if(*plist || *currPlist) {
         fprintf(stderr, "\n\n");
@@ -172,6 +193,7 @@ void load_from_disk(Memory *memory, List *plist, List *currPlist, int progress) 
         }
     }
 }
+*/
 
 void print_plist_node(FILE *f, void* data) {
     Process *p = (Process*)data;
@@ -214,7 +236,6 @@ List generate_process_list(FILE *fp) {
  * Process the first one for X seconds
  * returns remaining elapse time
  * if still elapsed < burst, puts to the back of the queue
- * */
 int process_recent(int elapse, List *plist, Memory *memory) {
     Process *todo = (*plist)->data;
     todo->elapsed += elapse;
@@ -239,4 +260,5 @@ bool process_eq(void *aim, void *node) {
     Process *nodeP = (Process*) node;
     return aimP->pid == nodeP->pid;
 }
+*/
 

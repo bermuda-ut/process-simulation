@@ -16,6 +16,7 @@ struct process_t {
 extern Process *new_process(int arrival, int pid, int memsize, int burst);
 //extern Process *oldest_pid(List plist);
 extern void free_process(Process *p);
+extern bool process_eq(void *target, void* node);
 
 //extern int process_pid(int pid, int elapse, List *plist);
 
