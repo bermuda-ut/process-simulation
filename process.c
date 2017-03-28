@@ -1,3 +1,12 @@
+/*=============================================================================
+#     FileName: process.c
+#         Desc: implementation of process
+#       Author: Max Lee
+#        Email: hoso1312@gmail.com
+#     HomePage: mallocsizeof.me
+#      Version: 0.0.1
+#   LastChange: 2017-03-29 10:41:26
+=============================================================================*/
 #include "process.h"
 
 bool process_eq(void *target, void* node) {

@@ -1,3 +1,12 @@
+/*=============================================================================
+#     FileName: memory.h
+#         Desc: declaration of required functions for memory simulation
+#       Author: Max Lee
+#        Email: hoso1312@gmail.com
+#     HomePage: mallocsizeof.me
+#      Version: 0.0.1
+#   LastChange: 2017-03-29 10:40:59
+=============================================================================*/
 #ifndef MEMORY
 #define MEMORY
 
@@ -22,16 +31,10 @@ struct chunk_t {
 
 typedef struct memory_t Memory;
 struct memory_t {
-    // list of memory chunks
-    List chunks;
-
-    // list of processes in queue
-    List processes;
-
-    // list of processes in arrivals order
-    List arrivals;
-
-    int size;
+    List chunks;    // list of memory chunks
+    List processes; // list of processes in queue
+    List arrivals;  // list of processes in arrivals order
+    int size;       // size of the chunk of memory
 };
 
 extern Chunk *new_chunk(int size);
@@ -43,10 +46,6 @@ extern void requeue_memory_head(Memory *m);
 extern void free_memory_head(Memory *m);
 extern int load_to_memory(Memory *m, Process *p);
 void merge_empty_slots(Memory *m);
-
-//extern int load_memory(Memory *m, Process *p);
-//extern void unload_memory(Memory *m, int pid);
-//extern int in_memory(Memory *m, int pid);
 
 extern int process_count(Memory *m);
 extern int hole_count(Memory *m);

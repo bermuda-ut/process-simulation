@@ -1,3 +1,12 @@
+/*=============================================================================
+#     FileName: advlist.c
+#         Desc: implementation of extended list functions
+#       Author: Max Lee
+#        Email: hoso1312@gmail.com
+#     HomePage: mallocsizeof.me
+#      Version: 0.0.1
+#   LastChange: 2017-03-29 10:40:41
+=============================================================================*/
 #include "advlist.h"
 
 void head_to_tail(List *list) {
