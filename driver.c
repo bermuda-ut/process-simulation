@@ -6,12 +6,14 @@
 
 #include "process.h"
 #include "memory.h"
+#include "storage.h"
 #include "list.h"
+#include "advlist.h"
 
 #define INPUT_SIZE 4
 #define READ_SIZE 4
 
-void simulate_process(List plist, Memory *memory, int quantum);
+void simulate_process(List plist, Memory *memory, Storage *s, int quantum);
 void print_plist_node(FILE *f, void* data);
 void print_inputs(FILE *f, char **inputs);
 FILE *open_file(char* file, char* format);
@@ -49,9 +51,10 @@ int main(int argc, char **argv) {
 
     // initiate memory
     Memory *m = new_memory(inputs[1], atoi(inputs[2]));
+    Storage *s = new_storage();
 
     // start processing!
-    simulate_process(plist, m, atoi(inputs[3]));
+    simulate_process(plist, m, s, atoi(inputs[3]));
 
     free(inputs);
     free_list(plist);
@@ -61,62 +64,37 @@ int main(int argc, char **argv) {
 }
 
 
-void simulate_process(List plist, Memory *memory, int quantum) {
+void simulate_process(List plist, Memory *m, Storage *s, int quantum) {
     int progress = 0;
     bool requeue = 0;
-    // assert always start at 0 with first processes
-    List currPlist = NULL; // ie currently loaded shit
-    //void load_from_disk(Memory *memory, List *plist, List *currPlist, int progress) {
-    
-    while(plist || currPlist) {
-        // load oldest, highest priority to back of the queue
-        load_from_disk(memory, &plist, &currPlist, progress);
-        fprintf(stderr, "plist: %p\n", plist);
+    // while there are stuff in arrivals or plist
 
-        // put the processed process from last iteration to the back of the queue
-        if(requeue) {
-            Process *todo = (Process*) currPlist->data;
-            pop(&currPlist);
-            insert(todo, &currPlist);
-        }
+    // assume start with process
+    while(s->processes || plist || m->arrivals) {
+        // process the head process of the memory
+        int res = process_memory_head(m);
 
-        // process the head of the queue
-        int remain = 0;
-        if(currPlist) {
-            // head of the queue process
-            Process *computing = (Process*) currPlist->data;
-            // segfault here
-            int pid = computing->pid;
-
-            // process the head, 
-            // if finshed, remove from queue and memory
-            //fprintf(stderr, "Processed %d\n", pid);
-            remain = process_recent(quantum, &currPlist, memory);
-
-            fprintf(stderr, "= MEM QUEUE:\n");
-            print_list(print_plist_node, stderr, currPlist);
-
-            // have not finishe processing,
-            // next iteration, need to move this process to the end
-            if(remain == -1) {
-                requeue = 1;
-                remain = 0;
-                fprintf(stderr, "Proessed %d\n", pid);
-            } else {
-                fprintf(stderr, "Finshed %d\n", pid);
-            }
-
-            progress += quantum - remain;
-            fprintf(stderr, "Elapsed %d, Remain %d\n", progress, remain);
-        } else {
-            requeue = 0;
+        if(res == -1) {
+            // res = -1 = did not finish processing, need to requeue process
+            requeue_memory_head(m);
+            progress += quantum;
+        } else if(res == -2) {
+            // res = -1 = there is nothing to process in memory!
+            // requeue_memory_head(m);
             progress += 1;
+        } else {
+            // res = 0,1,2... = finished processing, need to delete process
+            free_memory_head(m);
+            progress += quantum - quantum;
         }
-    }
 
-    fprintf(stderr, "\n\n");
-    print_memory(memory, stderr);
-    fprintf(stderr, "DONE %d\n", progress);
+        // load plist to storage IF head plist arrival >= progress
+        load_to_storage(plist, s, progress);
+
+        // from storage, load oldest process to m
+        storage_to_memory(s, m);
+
+    }
 }
 
 void load_from_disk(Memory *memory, List *plist, List *currPlist, int progress) {

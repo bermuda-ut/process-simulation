@@ -14,10 +14,14 @@ struct chunk_t {
 typedef struct memory_t Memory;
 struct memory_t {
     // list of memory chunks
-    List list;
+    List chunks;
 
-    // list of arrivals
+    // list of processes in queue
+    List processes;
+
+    // list of processes ids in arrivals order
     List arrivals;
+
     int size;
 };
 

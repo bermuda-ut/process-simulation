@@ -15,8 +15,8 @@ ALL_TESTS := $(addsuffix .test, $(basename $(wildcard ./tests/*.txt)))
 ## OBJ = Object files.
 ## SRC = Source files.
 ## EXE = Executable name.
-SRC = driver.c process.c list.c memory.c
-OBJ = driver.o process.o list.o memory.o
+SRC = driver.c process.c list.c memory.c storage.c advlist.c
+OBJ = driver.o process.o list.o memory.o storage.o advlist.o
 EXE = swap
 
 ## Top level target is executable.
@@ -42,7 +42,9 @@ all: test
 	@echo "Success, all tests passed."
 
 ## Dependencies
-driver.o:	process.h memory.h list.h
+driver.o:	process.h memory.h list.h storage.h
 process.o:	process.h list.h
 memory.o: memory.h process.h list.h
+storage.o: list.h process.h storage.h
+advlist.o: advlist.h list.h
 list.o: list.h
