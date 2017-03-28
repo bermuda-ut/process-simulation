@@ -1,8 +1,8 @@
 #ifndef MEMORY
 #define MEMORY
 
-#define PROCESSED -1;
-#define NOTHING_TO_PROCESS -2;
+#define PROCESSED -1
+#define NOTHING_TO_PROCESS -2
 
 #define FREE_CHAR '-'
 #define TAKEN_CHAR '+'
@@ -47,6 +47,10 @@ void merge_empty_slots(Memory *m);
 //extern int load_memory(Memory *m, Process *p);
 //extern void unload_memory(Memory *m, int pid);
 //extern int in_memory(Memory *m, int pid);
+
+extern int process_count(Memory *m);
+extern int hole_count(Memory *m);
+extern int usage_calc(Memory *m);
 
 extern void print_memory(Memory *m, FILE *f);
 extern void free_memory(Memory *m);

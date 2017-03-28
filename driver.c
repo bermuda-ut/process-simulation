@@ -51,11 +51,10 @@ int main(int argc, char **argv) {
     // start processing!
     simulate_process(plist, m, s, atoi(inputs[3]));
 
-    /*
     free(inputs);
     free_list(plist);
     free_memory(m);
-    */
+    free_storage(s);
 
     exit(EXIT_SUCCESS);
 }
@@ -66,23 +65,21 @@ void simulate_process(List plist, Memory *m, Storage *s, int quantum) {
     bool requeue = 0;
 
     // while there are stuff in arrivals or plist
-    while(s->processes || plist || m->arrivals) {
+    while(s->blocks || plist || m->arrivals) {
         fprintf(stderr, "\n\n\t\t\tPROGRESSS %d \n", progress);
+
+        // load plist to storage IF head plist arrival >= progress
+        load_to_storage(&plist, s, progress);
+
+        // from storage, load oldest process to m
+        storage_to_memory(s, m, progress);
 
         // from prev interation, requeue if needed
         if(requeue) {
             requeue_memory_head(m);
             requeue = 0;
-            fprintf(stderr, "requeued\n");
+            fprintf(stderr, "Requeued unfinished process from last iteration\n");
         }
-
-        // load plist to storage IF head plist arrival >= progress
-        load_to_storage(&plist, s, progress);
-        fprintf(stderr, "plist > storage\n");
-
-        // from storage, load oldest process to m
-        storage_to_memory(s, m);
-        fprintf(stderr, "storage > memory\n");
 
         // print status
         print_list(print_plist_node, stderr, plist);
@@ -92,17 +89,17 @@ void simulate_process(List plist, Memory *m, Storage *s, int quantum) {
         // add elapsed the head process of the memory
         int res = process_memory_head(m, quantum);
 
-        if(res == -1) {
+        if(res == PROCESSED) {
             // res = -1 = did not finish processing, need to requeue process
-            fprintf(stderr, "back to queue\n");
+            // fprintf(stderr, "back to queue\n");
             requeue = 1;
             progress += quantum;
-        } else if(res == -2) {
-            fprintf(stderr, "nothing to process\n");
+        } else if(res == NOTHING_TO_PROCESS) {
+            fprintf(stderr, "Nothing to process!\n");
             // res = -2 = nothing to process, kill time
             progress += 1;
         } else {
-            fprintf(stderr, "finished processing one\n");
+            fprintf(stderr, "Finished processing PID:%d\n", ((Process*)(m->processes->data))->pid);
             // res = 0,1,2... = finished processing, need to delete process
             free_memory_head(m);
             progress += quantum - res;
@@ -110,7 +107,8 @@ void simulate_process(List plist, Memory *m, Storage *s, int quantum) {
         fprintf(stderr, "next\n");
 
     }
-    fprintf(stderr, "simulation complete\n");
+
+    fprintf(stdout, "time %d, simulation finished.\n", progress);
 }
 
 void print_plist_node(FILE *f, void* data) {

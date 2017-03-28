@@ -186,3 +186,39 @@ void free_memory_head(Memory *m) {
     merge_empty_slots(m);
 }
 
+int process_count(Memory *m) {
+    int total = 0;
+    List alist = m->arrivals;
+    while(alist) {
+        total++;
+        alist = alist->next;
+    }
+    return total;
+}
+
+int hole_count(Memory *m) {
+    int total = 0;
+    List clist = m->chunks;
+
+    while(clist) {
+        Chunk *c = clist->data;
+        if(c->taken == 0)
+            total++;
+        clist = clist->next;
+    }
+    return total;
+}
+
+int usage_calc(Memory *m) {
+    int total = 0;
+    List clist = m->chunks;
+
+    while(clist) {
+        Chunk *c = clist->data;
+        if(c->taken)
+            total += c->size;
+        clist = clist->next;
+    }
+
+    return (int)ceil(100.0f * total / m->size);
+}
