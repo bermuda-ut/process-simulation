@@ -17,7 +17,7 @@ Process *new_process(int arrival, int pid, int memsize, int burst) {
     return p;
 }
 
-void free_process(Process *p) {
+void free_process(void *p) {
     free(p);
 }
 

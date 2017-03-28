@@ -1,5 +1,17 @@
+/*=============================================================================
+#     FileName: storage.c
+#         Desc: functions required for storage operation
+#       Author: Max Lee
+#        Email: hoso1312@gmail.com
+#     HomePage: mallocsizeof.me
+#      Version: 0.0.1
+#   LastChange: 2017-03-29 10:32:33
+=============================================================================*/
 #include "storage.h"
 
+/*
+ * Create and return new allocated storage
+ * */
 Storage *new_storage() {
     Storage *s = malloc(sizeof(Storage));
     s->blocks = NULL;
@@ -82,12 +94,9 @@ void load_to_storage(List *plist, Storage *s, int progress) {
 }
 
 void memory_to_storage(Storage *s, Memory *m, int arrival) {
-    // from memory, load oldest process to s
-    // delete from arrivals queue
-    // arrival is emplty for some reason
     if(!m->arrivals) {
-        fprintf(stderr, "nothing in arrival!\n");
-        fprintf(stderr, "processes %p\n", m->processes);
+        fprintf(stderr, "[CRITICAL ERROR] Nothing in arrival!\n");
+        fprintf(stderr, "                 Processes %p\n", m->processes);
         exit(EXIT_FAILURE);
     }
     Process *oldest = pop(&(m->arrivals));
@@ -145,6 +154,15 @@ void print_storage(Storage *s, FILE *f) {
 }
 
 void free_storage(Storage *s) {
+    free_list_data(free_block, &(s->blocks));
     free(s);
 }
 
+void free_block(void *b) {
+    Block *bp = b;
+
+    if(bp->process)
+        free_process(bp->process);
+
+    free(bp);
+}

@@ -1,10 +1,33 @@
+/*=============================================================================
+#     FileName: memory.c
+#         Desc: functions required for memory operations
+#       Author: Max Lee
+#        Email: hoso1312@gmail.com
+#     HomePage: mallocsizeof.me
+#      Version: 0.0.1
+#   LastChange: 2017-03-29 10:30:32
+=============================================================================*/
 #include "memory.h"
 
 void free_memory(Memory *m) {
+    if(m->processes) {
+        free_list(m->processes);
+        free_list_data(free_process, &(m->processes));
+    }
+
+    if(m->chunks) {
+        free_list(m->chunks);
+        free_list_data(free_chunk, &(m->processes));
+    }
+
+    // processes are already free here
+    if(m->arrivals)
+        free_list(m->arrivals);
+
     free(m);
 }
 
-void free_chunk(Chunk *c) {
+void free_chunk(void *c) {
     free(c);
 }
 
@@ -183,6 +206,7 @@ void free_memory_head(Memory *m) {
         node = node->next;
     }
 
+    free_process(p);
     merge_empty_slots(m);
 }
 

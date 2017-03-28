@@ -1,3 +1,13 @@
+/*=============================================================================
+#     FileName: storage.h
+#         Desc: declaration of storage functions
+#       Author: Max Lee
+#        Email: hoso1312@gmail.com
+#     HomePage: mallocsizeof.me
+#      Version: 0.0.1
+#   LastChange: 2017-03-29 10:33:54
+#      History:
+=============================================================================*/
 #ifndef STORAGE
 #define STORAGE
 
@@ -27,5 +37,6 @@ void memory_to_storage(Storage *s, Memory *m, int arrival);
 
 extern void print_storage(Storage *s, FILE *f);
 extern void free_storage(Storage *s);
+extern void free_block(void *b);
 
 #endif

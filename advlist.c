@@ -12,3 +12,12 @@ void swap_list_position(List *list) {
     (*list)->data = d2;
     (*list)->next->data = d1;
 }
+
+void free_list_data(void (*freefunc)(void *data), List *list) {
+    List node = *list;
+    while(node) {
+        if(node->data)
+            freefunc(node->data);
+        node = node->next;
+    }
+}

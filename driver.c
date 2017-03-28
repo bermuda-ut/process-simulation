@@ -1,5 +1,12 @@
-/* Read a number and determine if it is prime.
-*/
+/*=============================================================================
+#     FileName: driver.c
+#         Desc: driver program for the simulation
+#       Author: Max Lee
+#        Email: hoso1312@gmail.com
+#     HomePage: mallocsizeof.me
+#      Version: 0.0.1
+#   LastChange: 2017-03-29 10:36:52
+=============================================================================*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,13 +32,10 @@ int main(int argc, char **argv) {
     char **inputs = malloc(sizeof(char*) * INPUT_SIZE);
 
     // read input
-    for(int i = 0; i < argc; i++) {
-        for(int j = 0; j < INPUT_SIZE; j++) {
-            if(strcmp(argv[i], flags[j]) == 0) {
+    for(int i = 0; i < argc; i++)
+        for(int j = 0; j < INPUT_SIZE; j++)
+            if(strcmp(argv[i], flags[j]) == 0)
                 inputs[j] = argv[i + 1];
-            }
-        }
-    }
 
     // output what has been read
     print_inputs(stderr, inputs);
@@ -51,6 +55,7 @@ int main(int argc, char **argv) {
     // start processing!
     simulate_process(plist, m, s, atoi(inputs[3]));
 
+    // clean up
     free(inputs);
     free_list(plist);
     free_memory(m);

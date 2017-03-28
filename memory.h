@@ -54,6 +54,6 @@ extern int usage_calc(Memory *m);
 
 extern void print_memory(Memory *m, FILE *f);
 extern void free_memory(Memory *m);
-extern void free_chunk(Chunk *c);
+extern void free_chunk(void *c);
 
 #endif
