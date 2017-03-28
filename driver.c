@@ -19,14 +19,7 @@ void print_inputs(FILE *f, char **inputs);
 void print_plist_node(FILE *f, void* data);
 FILE *open_file(char* file, char* format);
 
-// deprecated
-//void load_from_disk(Memory *memory, List *plist, List *currPlist, int progress);
-//int process_recent(int elapse, List *plist, Memory *memory);
-//bool process_eq(void *aim, void *node);
-
 int main(int argc, char **argv) {
-    // pointer declare
-
     // set relations
     const char *flags[] = { "-f", "-a", "-m", "-q" };
     char **inputs = malloc(sizeof(char*) * INPUT_SIZE);
@@ -114,86 +107,11 @@ void simulate_process(List plist, Memory *m, Storage *s, int quantum) {
             free_memory_head(m);
             progress += quantum - res;
         }
+        fprintf(stderr, "next\n");
+
     }
+    fprintf(stderr, "simulation complete\n");
 }
-
-/*
-void load_from_disk(Memory *memory, List *plist, List *currPlist, int progress) {
-    if(*plist || *currPlist) {
-        fprintf(stderr, "\n\n");
-
-        // swap
-        if(plist && ((Process*)((*plist)->data))->arrival <= progress) {
-            Process *nextProcess = (*plist)->data;
-            Process *upcoming = (*plist)->next->data;
-
-            // chose lowest pid
-            if(upcoming->arrival == nextProcess->arrival) {
-                List temp = *plist;
-                int lowest = ((Process*)(temp->data))->pid;
-                while(((Process*)(temp->data))->arrival == nextProcess->arrival) {
-                    int cmp = ((Process*)(temp->data))->pid;
-                    if(lowest > cmp) {
-                        lowest = cmp;
-                    }
-                    temp = temp->next;
-                }
-
-                List prev = NULL;
-                temp = *plist;
-                while(((Process*)(temp->data))->arrival == nextProcess->arrival) { 
-                    int pid = ((Process*)(temp->data))->pid;
-                    if(pid == lowest) {
-                        if(prev)
-                            prev->next = temp->next;
-
-                        Process *data = temp->data;
-                        *plist = push(*plist, data);
-                        nextProcess = data;
-                        free(temp);
-                        break;
-                    }
-                    prev = temp;
-                    temp = temp->next;
-                }
-            }
-
-            if(currPlist == NULL)
-                *currPlist = push(NULL, (*plist)->data);
-            else
-                insert(nextProcess, currPlist);
-
-            fprintf(stderr, "Loaded %d\n", nextProcess->pid);
-            fprintf(stdout, "time %d, %d loaded\n", progress, nextProcess->pid);
-            pop(plist);
-
-            while(!in_memory(memory, nextProcess->pid)) {
-                int success = load_memory(memory, nextProcess);
-                List temp = NULL;
-
-                if(!success) {
-                    Process *oldest = oldest_process(memory);
-                    del(process_eq, oldest, currPlist);
-
-                    fprintf(stderr, "Memory full! Unloaded PID:%d\n", oldest->pid);
-                    unload_memory(memory, oldest->pid);
-
-                    if(temp == NULL)
-                        temp = push(NULL, oldest);
-                    else
-                        insert(oldest, &temp);
-                }
-
-                append(temp, plist);
-            }
-
-            print_memory(memory, stderr);
-            fprintf(stderr, "= DISK: \n");
-            print_list(print_plist_node, stderr, *plist);
-        }
-    }
-}
-*/
 
 void print_plist_node(FILE *f, void* data) {
     Process *p = (Process*)data;
@@ -231,34 +149,4 @@ List generate_process_list(FILE *fp) {
     free(lineRead);
     return plist;
 }
-
-/*
- * Process the first one for X seconds
- * returns remaining elapse time
- * if still elapsed < burst, puts to the back of the queue
-int process_recent(int elapse, List *plist, Memory *memory) {
-    Process *todo = (*plist)->data;
-    todo->elapsed += elapse;
-
-    // finished
-    if(todo->burst <= todo->elapsed) {
-        int diff = todo->elapsed - todo->burst;
-        unload_memory(memory, todo->pid);
-        free_process(todo);
-        pop(plist);
-
-        return diff;
-    }
-
-    // put back since have not finished processing
-    // insert((void *)todo, plist);
-    return -1;
-}
-
-bool process_eq(void *aim, void *node) {
-    Process *aimP = (Process*) aim;
-    Process *nodeP = (Process*) node;
-    return aimP->pid == nodeP->pid;
-}
-*/
 

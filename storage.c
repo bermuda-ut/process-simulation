@@ -32,9 +32,9 @@ void memory_to_storage(Storage *s, Memory *m) {
     // delete from arrivals queue
     // arrival is emplty for some reason
     if(!m->arrivals) {
-        //fprintf(stderr, "nothing in arrival!\n");
-        //fprintf(stderr, "processes %p\n", m->processes);
-        return;
+        fprintf(stderr, "nothing in arrival!\n");
+        fprintf(stderr, "processes %p\n", m->processes);
+        exit(EXIT_FAILURE);
     }
     Process *oldest = pop(&(m->arrivals));
 
