@@ -1,4 +1,19 @@
+/*=============================================================================
+#     FileName: process.c
+#         Desc: implementation of process
+#       Author: Max Lee
+#        Email: hoso1312@gmail.com
+#     HomePage: mallocsizeof.me
+#      Version: 0.0.1
+#   LastChange: 2017-03-29 10:41:26
+=============================================================================*/
 #include "process.h"
+
+bool process_eq(void *target, void* node) {
+    Process *t = target;
+    Process *n = node;
+    return (n->pid == t->pid);
+}
 
 Process *new_process(int arrival, int pid, int memsize, int burst) {
     Process* p = malloc(sizeof(Process));
@@ -11,35 +26,7 @@ Process *new_process(int arrival, int pid, int memsize, int burst) {
     return p;
 }
 
-void free_process(Process *p) {
+void free_process(void *p) {
     free(p);
 }
-
-/*
-#define OLDEST_ARRIVAL 9999
-Process *oldest_pid(List plist) {
-    List curr = plist;
-    int arrival = OLDEST_ARRIVAL;
-    Process *p = NULL;
-
-    while(curr) {
-        Process *cp = (Process*)curr->data;
-        if(cp->arrival < arrival) {
-            arrival = cp->arrival;
-            p = cp;
-        }
-        curr = curr->next;
-    }
-
-    return p;
-}
-
-bool del_process(void *aim, void *node) {
-    Process *nodep = (Process*) ((List)node)->data;
-    Process *aimp = (Process*) ((List)aim)->data;
-    if(aimp->pid == nodep->pid)
-        return 0;
-    return 1;
-}
-*/
 

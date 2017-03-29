@@ -1,35 +1,33 @@
-# 
-# Sample Makefile for project 1 
-#
-# The program used for illustration purposes is
-# a simple program using prime numbers
-#
-
-## CC  = Compiler.
-## CFLAGS = Compiler flags.
+#=============================================================================
+#     FileName: Makefile
+#         Desc: custom makefile for the project
+#       Author: Max Lee
+#        Email: hoso1312@gmail.com
+#     HomePage: mallocsizeof.me
+#      Version: 0.0.1
+#   LastChange: 2017-03-29 12:12:31
+#=============================================================================
 CC = gcc
-CFLAGS = -Wall -Wextra -std=gnu99 -g
-SHELL := /bin/bash
-ALL_TESTS := $(addsuffix .test, $(basename $(wildcard ./tests/*.txt)))
+CFLAGS = -Wall -Wextra -std=gnu99
+# SHELL := /bin/bash
+#ALL_TESTS := $(addsuffix .test, $(basename $(wildcard ./tests/*.txt)))
 
-## OBJ = Object files.
-## SRC = Source files.
-## EXE = Executable name.
-SRC = driver.c process.c list.c memory.c
-OBJ = driver.o process.o list.o memory.o
+LIB = -lm
+HDR = strategy.h process.h list.h memory.h storage.h advlist.h
+SRC = strategy.c process.c list.c memory.c storage.c advlist.c driver.c
+OBJ = $(SRC:.c=.o)
+
 EXE = swap
 
 ## Top level target is executable.
-$(EXE):	$(OBJ)
-		$(CC) $(CFLAGS) -o $(EXE) $(OBJ) -lm
+$(EXE):	$(OBJ) Makefile
+	$(CC) $(CFLAGS) -o $(EXE) $(OBJ) $(LIB)
 
-## Clean: Remove object files and core dump files.
 clean:
-		/bin/rm $(OBJ) 
+	rm $(OBJ) 
 
-## Clobber: Performs Clean and removes executable file.
 clobber: clean
-		/bin/rm $(EXE) 
+	rm $(EXE) 
 
 #test: $(ALL_TESTS)
 test:
@@ -41,8 +39,4 @@ test:
 all: test
 	@echo "Success, all tests passed."
 
-## Dependencies
-driver.o:	process.h memory.h list.h
-process.o:	process.h list.h
-memory.o: memory.h process.h list.h
-list.o: list.h
+$(OBJ): $(HDR)

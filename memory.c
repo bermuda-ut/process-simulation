@@ -1,15 +1,33 @@
-#include <math.h>
+/*=============================================================================
+#     FileName: memory.c
+#         Desc: functions required for memory operations
+#       Author: Max Lee
+#        Email: hoso1312@gmail.com
+#     HomePage: mallocsizeof.me
+#      Version: 0.0.1
+#   LastChange: 2017-03-29 10:30:32
+=============================================================================*/
 #include "memory.h"
 
-#define FREE_CHAR '-'
-#define TAKEN_CHAR '+'
-#define MEM_PRINT_LEN 40
-
 void free_memory(Memory *m) {
+    if(m->processes) {
+        free_list(m->processes);
+        free_list_data(free_process, &(m->processes));
+    }
+
+    if(m->chunks) {
+        free_list(m->chunks);
+        free_list_data(free_chunk, &(m->processes));
+    }
+
+    // processes are already free here
+    if(m->arrivals)
+        free_list(m->arrivals);
+
     free(m);
 }
 
-void free_chunk(Chunk *c) {
+void free_chunk(void *c) {
     free(c);
 }
 
@@ -21,104 +39,64 @@ Chunk *new_chunk(int size) {
     return chunk;
 }
 
-Memory *new_memory(char* strategy, int size) {
+Memory *new_memory(int (*fit_strategy)(Memory*, Process*), int size) {
     Memory *mem = malloc(sizeof(Memory));
     Chunk *init = new_chunk(size);
 
-    mem->list = push(NULL, init);
+    mem->chunks = push(NULL, init);
     mem->arrivals = NULL;
+    mem->processes = NULL;
+    mem->fit_strategy = fit_strategy;
     mem->size = size;
     return mem;
-}
-
-int in_memory(Memory *m, int pid) {
-    List node = m->list;
-
-    while(node) {
-        Chunk *chunk = node->data;
-        if(chunk->taken == pid)
-            return 1;
-
-        node = node->next;
-    }
-
-    return 0;
 }
 
 Process *oldest_process(Memory *m) {
     return (m->arrivals->data);
 }
 
-int load_memory(Memory *m, Process *p) {
-    List node = m->list;
+void merge_empty_slots(Memory *m) {
+    List curr = m->chunks;
+    List next = curr->next;
 
-    while(node) {
-        Chunk *chunk = node->data;
-        int remain = chunk->size - p->memsize;
-        // can insert
-        if(chunk->taken == 0 && remain >= 0) {
-            chunk->taken = p->pid;
-            chunk->size = p->memsize;
+    while(curr && next) {
+        Chunk *c = (Chunk*)curr->data;
+        Chunk *n = (Chunk*)next->data;
+        //fprintf(stderr, "curr %p, next %p\n", curr, next);
+        //fprintf(stderr, "c %p, n %p\n", c, n);
+        //fprintf(stderr, "ct %d, nt %d\n", c->taken, n->taken);
 
-            if(remain > 0) {
-                Chunk *temp = new_chunk(remain);
-                List second = push(NULL, temp);
-                List third = node->next;
-                second->next = third;
-                node->next = second;
+        if(c && n && c->taken == 0 && n->taken == 0) {
+            int total = c->size + n->size;
+            Chunk *toadd = new_chunk(total);
+
+            // remove curr's chunk then point into new one
+            free_chunk(c);
+            curr->data = toadd;
+
+            // completely remove next
+            free_chunk(n);
+            curr->next = next->next;
+            free(next);
+
+            next = curr->next;
+        } else {
+            if(next && next->next) {
+                curr = next;
+                next = next->next;
+            } else {
+                break;
             }
-
-            if(m->arrivals)
-                insert(p, &(m->arrivals));
-            else
-                m->arrivals = push(NULL, p);
-
-            return 1;
         }
-
-        node = node->next;
     }
-    return 0;
 }
 
-bool tempest_eq(void *aim, void *node) {
-    Process *p = (Process*)node;
-    int pid = *((int*)aim);
-    return(p->pid == pid);
-
-}
-
-void unload_memory(Memory *m, int pid) {
-    List node = m->list;
-
-    while(node) {
-        Chunk *chunk = node->data;
-        // found to remove
-        if(chunk->taken == pid) {
-            chunk->taken = 0;
-            Chunk *nextChunk = node->next->data;
-
-            // need to merge
-            if(nextChunk->taken == 0) {
-                Chunk *merged = new_chunk(chunk->size + nextChunk->size);
-                free_chunk(node->data);
-                free_chunk(nextChunk);
-                node->data = merged;
-                node->next = node->next->next;
-            }
-
-            // remove from arrivals list
-            del(tempest_eq, &pid, &(m->arrivals));
-
-            return;
-        }
-
-        node = node->next;
-    }
+int load_to_memory(Memory *m, Process *p) {
+    return m->fit_strategy(m, p);
 }
 
 void print_memory(Memory *m, FILE *f) {
-    List node = m->list;
+    List node = m->chunks;
     int sum_taken = 0;
 
     while(node) {
@@ -131,8 +109,17 @@ void print_memory(Memory *m, FILE *f) {
             sum_taken += chunk->size;
         }
 
-        for(int i = 0; i < repeat; i++)
-            fprintf(f, "%c", rep);
+        if(repeat == 0)
+            repeat = 1;
+
+        for(int i = 0; i < repeat; i++) {
+            if(i == 0)
+                fprintf(f, "%d", chunk->taken);
+            else
+                fprintf(f, "%c", rep);
+        }
+
+        fprintf(f, "|");
 
         node = node->next;
     }
@@ -141,11 +128,105 @@ void print_memory(Memory *m, FILE *f) {
     fprintf(f, "%4d MB / %d MB  |  %.2f%% Used\n", sum_taken, m->size, 100.0f * sum_taken / m->size);
 
     List arr = m->arrivals;
-    fprintf(f, "[ ");
+    fprintf(f, "Arrival [ ");
     while(arr) {
         Process *p = (Process*)arr->data;
-        fprintf(f, "%d, ", p->pid);
+        fprintf(f, "%d:%d, ", p->pid, p->elapsed);
         arr = arr->next;
     }
     fprintf(f, " ]\n");
+
+    List prc = m->processes;
+    fprintf(f, "Processes [ ");
+    while(prc) {
+        Process *p = (Process*)prc->data;
+        fprintf(f, "%d:%d, ", p->pid, p->elapsed);
+        prc = prc->next;
+    }
+    fprintf(f, " ]\n");
+
+
+}
+
+int process_memory_head(Memory *m, int quantum) {
+    // res = -1 = did not finish processing, need to requeue process
+    List plist = m->processes;
+
+    if(!plist)
+        return NOTHING_TO_PROCESS;
+
+    Process *p = (Process*)plist->data;
+    p->elapsed += quantum;
+
+    int diff;
+    if((diff = p->elapsed - p->burst) >= 0)
+        return diff;
+
+    return PROCESSED;
+}
+
+void requeue_memory_head(Memory *m, Process *p) {
+    // res = -1 = there is nothing to process in memory!
+    if(m->processes->data == p)
+        head_to_tail(&(m->processes));
+} 
+
+void free_memory_head(Memory *m) {
+    // res = 0,1,2... = finished processing, need to delete process
+    // remove from processes;
+    Process *p = pop(&(m->processes));
+
+    // remove from arrivals
+    del(process_eq, p, &(m->arrivals));
+
+    // remove from memory
+    List node = m->chunks;
+    while(node) {
+        Chunk *c = node->data;
+        if(c->taken == p->pid) {
+            c->taken = 0;
+            break;
+        }
+        node = node->next;
+    }
+
+    free_process(p);
+    merge_empty_slots(m);
+}
+
+int process_count(Memory *m) {
+    int total = 0;
+    List alist = m->arrivals;
+    while(alist) {
+        total++;
+        alist = alist->next;
+    }
+    return total;
+}
+
+int hole_count(Memory *m) {
+    int total = 0;
+    List clist = m->chunks;
+
+    while(clist) {
+        Chunk *c = clist->data;
+        if(c->taken == 0)
+            total++;
+        clist = clist->next;
+    }
+    return total;
+}
+
+int usage_calc(Memory *m) {
+    int total = 0;
+    List clist = m->chunks;
+
+    while(clist) {
+        Chunk *c = clist->data;
+        if(c->taken)
+            total += c->size;
+        clist = clist->next;
+    }
+
+    return (int)ceil(100.0f * total / m->size);
 }
