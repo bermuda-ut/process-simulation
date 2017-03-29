@@ -43,7 +43,7 @@ extern Memory *new_memory(int (*fit_strategy)(Memory*, Process*), int size);
 extern Process *oldest_process(Memory *m);
 
 extern int process_memory_head(Memory *m, int quantum);
-extern void requeue_memory_head(Memory *m);
+extern void requeue_memory_head(Memory *m, Process* p);
 extern void free_memory_head(Memory *m);
 extern int load_to_memory(Memory *m, Process *p);
 void merge_empty_slots(Memory *m);

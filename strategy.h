@@ -17,3 +17,4 @@
 extern int first_fit(Memory *m, Process *p);
 extern int worst_fit(Memory *m, Process *p);
 extern int best_fit(Memory *m, Process *p);
+void fit_process_in(Memory *m, Process *p, List node);

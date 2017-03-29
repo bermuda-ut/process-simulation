@@ -82,6 +82,7 @@ int main(int argc, char **argv) {
 void simulate_process(List plist, Memory *m, Storage *s, int quantum) {
     int progress = 0;
     bool requeue = 0;
+    Process* p_to_requeue = NULL;
 
     // while there are stuff in arrivals or plist
     while(s->blocks || plist || m->arrivals) {
@@ -95,7 +96,7 @@ void simulate_process(List plist, Memory *m, Storage *s, int quantum) {
 
         // from prev interation, requeue if needed
         if(requeue) {
-            requeue_memory_head(m);
+            requeue_memory_head(m, p_to_requeue);
             requeue = 0;
             fprintf(stderr, "Requeued unfinished process from last iteration\n");
         }
@@ -112,6 +113,7 @@ void simulate_process(List plist, Memory *m, Storage *s, int quantum) {
             // res = -1 = did not finish processing, need to requeue process
             // fprintf(stderr, "back to queue\n");
             requeue = 1;
+            p_to_requeue = m->processes->data;
             progress += quantum;
         } else if(res == NOTHING_TO_PROCESS) {
             fprintf(stderr, "Nothing to process!\n");

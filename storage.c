@@ -99,6 +99,7 @@ void memory_to_storage(Storage *s, Memory *m, int arrival) {
         fprintf(stderr, "                 Processes %p\n", m->processes);
         exit(EXIT_FAILURE);
     }
+
     Process *oldest = pop(&(m->arrivals));
 
     // insert into storage
@@ -119,6 +120,8 @@ void memory_to_storage(Storage *s, Memory *m, int arrival) {
         }
         node = node->next;
     }
+
+    fprintf(stderr, "(PID:%d) memory > storage\n", oldest->pid);
 
     merge_empty_slots(m);
     sort_storage(s);

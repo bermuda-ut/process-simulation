@@ -109,8 +109,17 @@ void print_memory(Memory *m, FILE *f) {
             sum_taken += chunk->size;
         }
 
-        for(int i = 0; i < repeat; i++)
-            fprintf(f, "%c", rep);
+        if(repeat == 0)
+            repeat = 1;
+
+        for(int i = 0; i < repeat; i++) {
+            if(i == 0)
+                fprintf(f, "%d", chunk->taken);
+            else
+                fprintf(f, "%c", rep);
+        }
+
+        fprintf(f, "|");
 
         node = node->next;
     }
@@ -119,13 +128,24 @@ void print_memory(Memory *m, FILE *f) {
     fprintf(f, "%4d MB / %d MB  |  %.2f%% Used\n", sum_taken, m->size, 100.0f * sum_taken / m->size);
 
     List arr = m->arrivals;
-    fprintf(f, "[ ");
+    fprintf(f, "Arrival [ ");
     while(arr) {
         Process *p = (Process*)arr->data;
         fprintf(f, "%d:%d, ", p->pid, p->elapsed);
         arr = arr->next;
     }
     fprintf(f, " ]\n");
+
+    List prc = m->processes;
+    fprintf(f, "Processes [ ");
+    while(prc) {
+        Process *p = (Process*)prc->data;
+        fprintf(f, "%d:%d, ", p->pid, p->elapsed);
+        prc = prc->next;
+    }
+    fprintf(f, " ]\n");
+
+
 }
 
 int process_memory_head(Memory *m, int quantum) {
@@ -145,9 +165,10 @@ int process_memory_head(Memory *m, int quantum) {
     return PROCESSED;
 }
 
-void requeue_memory_head(Memory *m) {
+void requeue_memory_head(Memory *m, Process *p) {
     // res = -1 = there is nothing to process in memory!
-    head_to_tail(&(m->processes));
+    if(m->processes->data == p)
+        head_to_tail(&(m->processes));
 } 
 
 void free_memory_head(Memory *m) {
