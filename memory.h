@@ -10,18 +10,18 @@
 #ifndef MEMORY
 #define MEMORY
 
-#define PROCESSED -1
-#define NOTHING_TO_PROCESS -2
-
-#define FREE_CHAR '-'
-#define TAKEN_CHAR '+'
-#define MEM_PRINT_LEN 40
-
 #include <math.h>
 #include <stdlib.h>
 #include "list.h"
 #include "process.h"
 #include "advlist.h"
+
+#define PROCESSED -1
+#define NOTHING_TO_PROCESS -2
+
+#define MEM_PRINT_LEN 40
+#define FREE_CHAR '-'
+#define TAKEN_CHAR '+'
 
 typedef struct chunk_t Chunk;
 struct chunk_t {
@@ -31,14 +31,15 @@ struct chunk_t {
 
 typedef struct memory_t Memory;
 struct memory_t {
-    List chunks;    // list of memory chunks
+    List chunks;    // list of memory chunks. Head = highest memory address
     List processes; // list of processes in queue
     List arrivals;  // list of processes in arrivals order
     int size;       // size of the chunk of memory
+    int (*fit_strategy)(Memory*, Process*); // strategy to fit memory chunks in
 };
 
 extern Chunk *new_chunk(int size);
-extern Memory *new_memory(char* strategy, int size);
+extern Memory *new_memory(int (*fit_strategy)(Memory*, Process*), int size);
 extern Process *oldest_process(Memory *m);
 
 extern int process_memory_head(Memory *m, int quantum);
@@ -54,5 +55,4 @@ extern int usage_calc(Memory *m);
 extern void print_memory(Memory *m, FILE *f);
 extern void free_memory(Memory *m);
 extern void free_chunk(void *c);
-
 #endif

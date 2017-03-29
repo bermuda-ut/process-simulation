@@ -39,13 +39,14 @@ Chunk *new_chunk(int size) {
     return chunk;
 }
 
-Memory *new_memory(char* strategy, int size) {
+Memory *new_memory(int (*fit_strategy)(Memory*, Process*), int size) {
     Memory *mem = malloc(sizeof(Memory));
     Chunk *init = new_chunk(size);
 
     mem->chunks = push(NULL, init);
     mem->arrivals = NULL;
     mem->processes = NULL;
+    mem->fit_strategy = fit_strategy;
     mem->size = size;
     return mem;
 }
@@ -91,45 +92,7 @@ void merge_empty_slots(Memory *m) {
 }
 
 int load_to_memory(Memory *m, Process *p) {
-    List node = m->chunks;
-
-    while(node) {
-        Chunk *chunk = node->data;
-        int remain = chunk->size - p->memsize;
-        // can insert
-        if(chunk->taken == 0 && remain >= 0) {
-            chunk->taken = p->pid;
-            chunk->size = p->memsize;
-
-            // create new chunk
-            if(remain > 0) {
-                Chunk *temp = new_chunk(remain);
-                List second = push(NULL, temp);
-                List third = node->next;
-                second->next = third;
-                node->next = second;
-            }
-
-            merge_empty_slots(m);
-
-            // add to arrival list
-            if(m->arrivals)
-                insert(p, &(m->arrivals));
-            else
-                m->arrivals = push(NULL, p);
-
-            // add to process queue
-            if(m->processes)
-                insert(p, &(m->processes));
-            else
-                m->processes = push(NULL, p);
-
-            return 1;
-        }
-
-        node = node->next;
-    }
-    return 0;
+    return m->fit_strategy(m, p);
 }
 
 void print_memory(Memory *m, FILE *f) {

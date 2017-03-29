@@ -15,6 +15,7 @@
 #include "process.h"
 #include "storage.h"
 #include "memory.h"
+#include "strategy.h"
 
 #define INPUT_SIZE 4
 #define READ_SIZE 4
@@ -49,7 +50,7 @@ int main(int argc, char **argv) {
     fclose(fp);
 
     // initiate memory
-    Memory *m = new_memory(inputs[1], atoi(inputs[2]));
+    Memory *m = new_memory(first_fit, atoi(inputs[2]));
     Storage *s = new_storage();
 
     // start processing!
@@ -109,8 +110,6 @@ void simulate_process(List plist, Memory *m, Storage *s, int quantum) {
             free_memory_head(m);
             progress += quantum - res;
         }
-        fprintf(stderr, "next\n");
-
     }
 
     fprintf(stdout, "time %d, simulation finished.\n", progress);

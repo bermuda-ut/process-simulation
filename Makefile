@@ -4,8 +4,8 @@ CFLAGS = -Wall -Wextra -std=gnu99
 #ALL_TESTS := $(addsuffix .test, $(basename $(wildcard ./tests/*.txt)))
 
 LIB = -lm
-HDR = process.h list.h memory.h storage.h advlist.h
-SRC = process.c list.c memory.c storage.c advlist.c driver.c
+HDR = strategy.h process.h list.h memory.h storage.h advlist.h
+SRC = strategy.c process.c list.c memory.c storage.c advlist.c driver.c
 OBJ = $(SRC:.c=.o)
 
 EXE = swap
