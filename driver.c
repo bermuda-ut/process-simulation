@@ -50,7 +50,20 @@ int main(int argc, char **argv) {
     fclose(fp);
 
     // initiate memory
-    Memory *m = new_memory(first_fit, atoi(inputs[2]));
+    Memory *m;
+    if(strcmp(inputs[1], FIRST_FIT) == 0) {
+        m = new_memory(first_fit, atoi(inputs[2]));
+
+    } else if(strcmp(inputs[1], WORST_FIT) == 0) {
+        m = new_memory(worst_fit, atoi(inputs[2]));
+
+    } else if(strcmp(inputs[1], BEST_FIT) == 0) {
+        m = new_memory(best_fit, atoi(inputs[2]));
+
+    } else {
+        fprintf(stderr, "Invalid strategy defined\n");
+        exit(EXIT_FAILURE);
+    }
     Storage *s = new_storage();
 
     // start processing!

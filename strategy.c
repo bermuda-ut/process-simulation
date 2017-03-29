@@ -50,3 +50,11 @@ int first_fit(Memory *m, Process *p) {
     }
     return 0;
 }
+
+extern int worst_fit(Memory *m, Process *p) {
+
+}
+
+extern int best_fit(Memory *m, Process *p) {
+
+}

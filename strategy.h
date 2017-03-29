@@ -10,4 +10,10 @@
 #include "memory.h"
 #include "process.h"
 
+#define FIRST_FIT "first"
+#define WORST_FIT "worst"
+#define BEST_FIT "best"
+
 extern int first_fit(Memory *m, Process *p);
+extern int worst_fit(Memory *m, Process *p);
+extern int best_fit(Memory *m, Process *p);
