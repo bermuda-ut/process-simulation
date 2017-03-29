@@ -5,7 +5,7 @@
 #        Email: hoso1312@gmail.com
 #     HomePage: mallocsizeof.me
 #      Version: 0.0.1
-#   LastChange: 2017-03-29 11:01:21
+#   LastChange: 2017-03-29 14:28:35
 =============================================================================*/
 #include "strategy.h"
 
@@ -58,7 +58,31 @@ int worst_fit(Memory *m, Process *p) {
 }
 
 int best_fit(Memory *m, Process *p) {
+    List chosenNode = NULL;
+    int maxsize = -1;
 
+    List node = m->chunks;
+
+    while(node) {
+        Chunk *chunk = node->data;
+        int remain = chunk->size - p->memsize;
+
+        if(chunk->taken == 0 && remain >= 0 && (chunk->size < maxsize || maxsize == -1)) {
+            chosenNode = node;
+            maxsize = chunk->size;
+        }
+
+        node = node->next;
+    }
+
+    if(chosenNode) {
+        // best fit! 
+        fit_process_in(m, p, chosenNode);
+        return 1;
+    }
+
+    // failed to fit
+    return 0;
 }
 
 void fit_process_in(Memory *m, Process *p, List node) {
