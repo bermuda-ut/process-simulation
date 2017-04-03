@@ -5,7 +5,7 @@
 #        Email: hoso1312@gmail.com
 #     HomePage: mallocsizeof.me
 #      Version: 0.0.1
-#   LastChange: 2017-03-29 10:40:59
+#   LastChange: 2017-04-03 13:31:21
 =============================================================================*/
 #ifndef MEMORY
 #define MEMORY
@@ -38,6 +38,9 @@ struct memory_t {
     int (*fit_strategy)(Memory*, Process*); // strategy to fit memory chunks in
 };
 
+/**
+ * Check C file for function details
+ */
 extern Chunk *new_chunk(int size);
 extern Memory *new_memory(int (*fit_strategy)(Memory*, Process*), int size);
 extern Process *oldest_process(Memory *m);
@@ -55,4 +58,6 @@ extern int usage_calc(Memory *m);
 extern void print_memory(Memory *m, FILE *f);
 extern void free_memory(Memory *m);
 extern void free_chunk(void *c);
+
 #endif
+

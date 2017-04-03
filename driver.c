@@ -5,7 +5,7 @@
 #        Email: hoso1312@gmail.com
 #     HomePage: mallocsizeof.me
 #      Version: 0.0.1
-#   LastChange: 2017-03-29 10:36:52
+#   LastChange: 2017-04-03 13:31:34
 =============================================================================*/
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +31,8 @@ int main(int argc, char **argv) {
     // set relations
     const char *flags[] = { "-f", "-a", "-m", "-q" };
     char **inputs = malloc(sizeof(char*) * INPUT_SIZE);
+    // just in case, for project submission
+    fclose(stderr);
 
     // read input
     for(int i = 0; i < argc; i++)
@@ -49,6 +51,7 @@ int main(int argc, char **argv) {
 
     fclose(fp);
 
+    //----------------------------------------------------------------------
     // initiate memory
     Memory *m;
     if(strcmp(inputs[1], FIRST_FIT) == 0) {
@@ -61,14 +64,18 @@ int main(int argc, char **argv) {
         m = new_memory(best_fit, atoi(inputs[2]));
 
     } else {
+        // no default strategy exist according to specs
         fprintf(stderr, "Invalid strategy defined\n");
         exit(EXIT_FAILURE);
     }
+    // initiate storage
     Storage *s = new_storage();
 
+    //----------------------------------------------------------------------
     // start processing!
     simulate_process(plist, m, s, atoi(inputs[3]));
 
+    //----------------------------------------------------------------------
     // clean up
     free(inputs);
     free_list(plist);
@@ -106,35 +113,44 @@ void simulate_process(List plist, Memory *m, Storage *s, int quantum) {
         print_storage(s, stderr);
         print_memory(m, stderr);
 
-        // add elapsed the head process of the memory
         int res = process_memory_head(m, quantum);
 
         if(res == PROCESSED) {
-            // res = -1 = did not finish processing, need to requeue process
-            // fprintf(stderr, "back to queue\n");
+            // Processed but did not finish. Need to requeue process on next iteration
             requeue = 1;
             p_to_requeue = m->processes->data;
             progress += quantum;
+
         } else if(res == NOTHING_TO_PROCESS) {
+            // Nothing to process, just tick time
             fprintf(stderr, "Nothing to process!\n");
-            // res = -2 = nothing to process, kill time
             progress += 1;
+
         } else {
-            fprintf(stderr, "Finished processing PID:%d\n", ((Process*)(m->processes->data))->pid);
-            // res = 0,1,2... = finished processing, need to delete process
+            // Processed and finished processing. Need to delete process.
+            fprintf(stderr, "Finished processing PID:%d\n", 
+                    ((Process*)(m->processes->data))->pid);
             free_memory_head(m);
             progress += quantum - res;
         }
     }
 
+    // spec requirement
     fprintf(stdout, "time %d, simulation finished.\n", progress);
 }
 
+/**
+ * print function that is used for print_list
+ */
 void print_plist_node(FILE *f, void* data) {
     Process *p = (Process*)data;
-    fprintf(f, "A:%3d\tPID:%d\tsize:%3d\tburst:%3d\telapsed:%d\n", p->arrival, p->pid, p->memsize, p->burst, p->elapsed);
+    fprintf(f, "A:%3d\tPID:%d\tsize:%3d\tburst:%3d\telapsed:%d\n", 
+            p->arrival, p->pid, p->memsize, p->burst, p->elapsed);
 }
 
+/**
+ * print inputs read from the arguments
+ */
 void print_inputs(FILE *f, char **inputs) {
     fprintf(f, "FILENAME : %s\n", inputs[0]);
     fprintf(f, "ALGO     : %s\n", inputs[1]);
@@ -142,6 +158,9 @@ void print_inputs(FILE *f, char **inputs) {
     fprintf(f, "QUANT    : %s\n", inputs[3]);
 }
 
+/**
+ * Simple open file function
+ */
 FILE *open_file(char* file, char* format) {
     FILE *fp = fopen(file, format);
     if (fp == NULL) {
@@ -151,10 +170,15 @@ FILE *open_file(char* file, char* format) {
     return fp;
 }
 
+/**
+ * Generate process list based on the input
+ * Assumes the input is always in correct format
+ */
 List generate_process_list(FILE *fp) {
     List plist = NULL;
     int* lineRead = malloc(sizeof(int) * READ_SIZE);
-    while (fscanf(fp, "%d %d %d %d", lineRead, lineRead+1, lineRead+2, lineRead+3) == READ_SIZE) {
+
+    while(fscanf(fp, "%d %d %d %d", lineRead, lineRead+1, lineRead+2, lineRead+3) == READ_SIZE) {
         Process *data = new_process(lineRead[0], lineRead[1], lineRead[2], lineRead[3]);
 
         if(plist)
@@ -163,6 +187,7 @@ List generate_process_list(FILE *fp) {
             // first insertion ;)
             plist = push(NULL, data);
     }
+
     free(lineRead);
     return plist;
 }

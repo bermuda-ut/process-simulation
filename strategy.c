@@ -5,10 +5,14 @@
 #        Email: hoso1312@gmail.com
 #     HomePage: mallocsizeof.me
 #      Version: 0.0.1
-#   LastChange: 2017-03-29 14:28:35
+#   LastChange: 2017-04-03 14:00:19
 =============================================================================*/
 #include "strategy.h"
 
+/**
+ * fit the process to first available memory chunk
+ * returns 1 if successful, 0 otherwise
+ */
 int first_fit(Memory *m, Process *p) {
     List node = m->chunks;
 
@@ -28,13 +32,16 @@ int first_fit(Memory *m, Process *p) {
     return 0;
 }
 
+/**
+ * fit the process in the largest possible memory chunk
+ * returns 1 if successful, 0 otherwise
+ */
 int worst_fit(Memory *m, Process *p) {
     List chosenNode = NULL;
-
+    List node = m->chunks;
     int maxsize = 0;
 
-    List node = m->chunks;
-
+    // go down all the chunks
     while(node) {
         Chunk *chunk = node->data;
         int remain = chunk->size - p->memsize;
@@ -57,12 +64,16 @@ int worst_fit(Memory *m, Process *p) {
     return 0;
 }
 
+/**
+ * fit the process in the smallest possible memory chunk
+ * returns 1 if successful, 0 otherwise
+ */
 int best_fit(Memory *m, Process *p) {
     List chosenNode = NULL;
+    List node = m->chunks;
     int maxsize = -1;
 
-    List node = m->chunks;
-
+    // go down all the chunks
     while(node) {
         Chunk *chunk = node->data;
         int remain = chunk->size - p->memsize;
@@ -85,6 +96,9 @@ int best_fit(Memory *m, Process *p) {
     return 0;
 }
 
+/**
+ * fit the process p into memory into the given node
+ */
 void fit_process_in(Memory *m, Process *p, List node) {
     Chunk *chunk = node->data;
     int remain = chunk->size - p->memsize;

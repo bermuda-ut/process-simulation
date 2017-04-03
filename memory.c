@@ -5,10 +5,13 @@
 #        Email: hoso1312@gmail.com
 #     HomePage: mallocsizeof.me
 #      Version: 0.0.1
-#   LastChange: 2017-03-29 10:30:32
+#   LastChange: 2017-04-03 13:43:37
 =============================================================================*/
 #include "memory.h"
 
+/**
+ * Free memory, its chunks and processes and arrivals.
+ */
 void free_memory(Memory *m) {
     if(m->processes) {
         free_list(m->processes);
@@ -27,10 +30,16 @@ void free_memory(Memory *m) {
     free(m);
 }
 
+/**
+ * Simple free chunk
+ */
 void free_chunk(void *c) {
     free(c);
 }
 
+/**
+ * malloc and return a new chunk of memory
+ */
 Chunk *new_chunk(int size) {
     Chunk *chunk = malloc(sizeof(Chunk));
     chunk->size = size;
@@ -39,6 +48,9 @@ Chunk *new_chunk(int size) {
     return chunk;
 }
 
+/**
+ * malloc and set new memory for usage
+ */
 Memory *new_memory(int (*fit_strategy)(Memory*, Process*), int size) {
     Memory *mem = malloc(sizeof(Memory));
     Chunk *init = new_chunk(size);
@@ -51,10 +63,17 @@ Memory *new_memory(int (*fit_strategy)(Memory*, Process*), int size) {
     return mem;
 }
 
+/**
+ * return oldest process in the memory
+ */
 Process *oldest_process(Memory *m) {
     return (m->arrivals->data);
 }
 
+/**
+ * go through the memory chunks and merge any two empty slots that
+ * appear consecutively
+ */
 void merge_empty_slots(Memory *m) {
     List curr = m->chunks;
     List next = curr->next;
@@ -91,14 +110,22 @@ void merge_empty_slots(Memory *m) {
     }
 }
 
+/**
+ * load a process to memory
+ */
 int load_to_memory(Memory *m, Process *p) {
     return m->fit_strategy(m, p);
 }
 
+/**
+ * print memory for debugging and visualization
+ */
 void print_memory(Memory *m, FILE *f) {
     List node = m->chunks;
     int sum_taken = 0;
 
+    //----------------------------------------------------------------------
+    // visualize memory
     while(node) {
         Chunk *chunk = (Chunk*) node->data;
         char rep = FREE_CHAR;
@@ -125,8 +152,11 @@ void print_memory(Memory *m, FILE *f) {
     }
 
     fprintf(f, "\n");
-    fprintf(f, "%4d MB / %d MB  |  %.2f%% Used\n", sum_taken, m->size, 100.0f * sum_taken / m->size);
+    fprintf(f, "%4d MB / %d MB  |  %.2f%% Used\n",
+            sum_taken, m->size, 100.0f * sum_taken / m->size);
 
+    //----------------------------------------------------------------------
+    // print arrival list
     List arr = m->arrivals;
     fprintf(f, "Arrival [ ");
     while(arr) {
@@ -136,6 +166,8 @@ void print_memory(Memory *m, FILE *f) {
     }
     fprintf(f, " ]\n");
 
+    //----------------------------------------------------------------------
+    // print process queue
     List prc = m->processes;
     fprintf(f, "Processes [ ");
     while(prc) {
@@ -148,8 +180,11 @@ void print_memory(Memory *m, FILE *f) {
 
 }
 
+/**
+ * process the first in the head of the queue of process
+ * and return the progress or remaining time left
+ */
 int process_memory_head(Memory *m, int quantum) {
-    // res = -1 = did not finish processing, need to requeue process
     List plist = m->processes;
 
     if(!plist)
@@ -159,20 +194,26 @@ int process_memory_head(Memory *m, int quantum) {
     p->elapsed += quantum;
 
     int diff;
+
+    // finished processing, return remaining time left
     if((diff = p->elapsed - p->burst) >= 0)
         return diff;
-
+    // Processed but not finish
     return PROCESSED;
 }
 
+/**
+ * requeue head process of the queue to the tail
+ */
 void requeue_memory_head(Memory *m, Process *p) {
-    // res = -1 = there is nothing to process in memory!
     if(m->processes->data == p)
         head_to_tail(&(m->processes));
 } 
 
+/**
+ * free the head process of the queue
+ */
 void free_memory_head(Memory *m) {
-    // res = 0,1,2... = finished processing, need to delete process
     // remove from processes;
     Process *p = pop(&(m->processes));
 
@@ -194,6 +235,9 @@ void free_memory_head(Memory *m) {
     merge_empty_slots(m);
 }
 
+/**
+ * count number of processes in memory
+ */
 int process_count(Memory *m) {
     int total = 0;
     List alist = m->arrivals;
@@ -204,6 +248,9 @@ int process_count(Memory *m) {
     return total;
 }
 
+/**
+ * count number of holes in memory
+ */
 int hole_count(Memory *m) {
     int total = 0;
     List clist = m->chunks;
@@ -217,6 +264,9 @@ int hole_count(Memory *m) {
     return total;
 }
 
+/**
+ * calculate memory usage % in whole number
+ */
 int usage_calc(Memory *m) {
     int total = 0;
     List clist = m->chunks;
@@ -228,5 +278,11 @@ int usage_calc(Memory *m) {
         clist = clist->next;
     }
 
-    return (int)ceil(100.0f * total / m->size);
+    // round up
+    // floored value + whether it fits perfectly or not
+    return (100 * total) / m->size + !!((100 * total) % m->size);
+
+    // alternative
+    //return (100 * total + m->size - 1) / m->size;
 }
+

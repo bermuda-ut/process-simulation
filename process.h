@@ -5,7 +5,7 @@
 #        Email: hoso1312@gmail.com
 #     HomePage: mallocsizeof.me
 #      Version: 0.0.1
-#   LastChange: 2017-03-29 10:41:39
+#   LastChange: 2017-04-03 13:45:18
 =============================================================================*/
 #ifndef PROCESS
 #define PROCESS
@@ -22,8 +22,12 @@ struct process_t {
         elapsed;    // time spent so far on this process to process
 };
 
+/**
+ * Check C file for function details
+ */
 extern Process *new_process(int arrival, int pid, int memsize, int burst);
 extern void free_process(void *p);
 extern bool process_eq(void *target, void* node);
 
 #endif
+
